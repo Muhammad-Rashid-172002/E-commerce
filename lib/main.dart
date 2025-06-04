@@ -1,23 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:shop_app/views/screens/home/homescreen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shop_app/views/screens/home/constant/product_model.dart';
+import 'package:shop_app/views/screens/home/splashScreen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive
+  await Hive.initFlutter();
+
+  // Register adapter
+  Hive.registerAdapter(ProductAdapter());
+
+  // Open box
+  await Hive.openBox<Product>('products');
+
+  runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
-  // This widget is the root of your application.
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: HomeScreen(),
+      title: 'Shop App',
+      home: Splashscreen(),
     );
   }
 }

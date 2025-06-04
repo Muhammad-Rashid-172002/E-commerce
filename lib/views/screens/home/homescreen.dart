@@ -1,9 +1,86 @@
 import 'package:flutter/material.dart';
-import 'package:shop_app/views/screens/home/add_product.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shop_app/views/screens/home/constant/product_model.dart';
 import 'package:shop_app/views/screens/home/dummy.dart';
-import 'package:shop_app/views/screens/home/sell_product.dart';
+import 'add_product.dart';
+import 'sell_product.dart';
 
 class HomeScreen extends StatelessWidget {
+  int getTotalProducts(Box<Product> box) => box.length;
+
+  int getTotalStock(Box<Product> box) =>
+      box.values.fold(0, (a, b) => a + b.quantity);
+
+  double getTotalSales(Box<Product> box) =>
+      box.values.fold(0, (a, b) => a + b.totalSold * b.sellRate);
+
+  double getProfit(Box<Product> box) =>
+      box.values.fold(0, (a, b) => a + b.totalSold * (b.sellRate - b.buyRate));
+
+  @override
+  Widget build(BuildContext context) {
+    final productBox = Hive.box<Product>('products');
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Home'), backgroundColor: Colors.blueAccent),
+      body: ValueListenableBuilder(
+        valueListenable: productBox.listenable(),
+        builder: (context, Box<Product> box, _) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                SizedBox(height: 30),
+                Row(
+                  children: [
+                    buildTile("Products", getTotalProducts(box).toString()),
+                    SizedBox(width: 16),
+                    buildTile("In Stock", getTotalStock(box).toString()),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    buildTile(
+                      "Total Sales",
+                      'Rs ${getTotalSales(box).toStringAsFixed(2)}',
+                    ),
+                    SizedBox(width: 16),
+                    buildTile(
+                      "Profit",
+                      'Rs ${getProfit(box).toStringAsFixed(2)}',
+                    ),
+                  ],
+                ),
+                SizedBox(height: 120),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    homeButton(
+                      context,
+                      "Add Product",
+                      Icons.add,
+                      AddProductScreen(),
+                      Colors.green, // Green color for Add Product
+                    ),
+                    homeButton(
+                      context,
+                      "Sell Product",
+                      Icons.sell,
+                      SellProductScreen(),
+                      Colors.orange, // Orange color for Sell Product
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget buildTile(String title, String value) => Expanded(
     child: Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -11,13 +88,12 @@ class HomeScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(title, style: TextStyle(fontSize: 16, color: Colors.grey)),
+            Text(title, style: TextStyle(color: Colors.grey)),
             SizedBox(height: 4),
             Text(
               value,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
@@ -25,77 +101,24 @@ class HomeScreen extends StatelessWidget {
     ),
   );
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Home')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                buildTile("Products", "12"),
-                SizedBox(width: 16),
-                buildTile("In Stock", "100"),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                buildTile("Total Sales", "₹5,000"),
-                SizedBox(width: 16),
-                buildTile("Profit", "₹1,200"),
-              ],
-            ),
-            SizedBox(height: 24),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                homeButton(
-                  context,
-                  "Add Product",
-                  Icons.add,
-                  AddProductScreen(),
-                ),
-                homeButton(
-                  context,
-                  "Sell Product",
-                  Icons.shopping_cart,
-                  SellProductScreen(),
-                ),
-                homeButton(
-                  context,
-                  "View Reports",
-                  Icons.bar_chart,
-                  DummyScreen("Reports"),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget homeButton(
     BuildContext context,
-    String label,
+    String text,
     IconData icon,
     Widget screen,
+    Color color,
   ) {
     return ElevatedButton.icon(
-      onPressed: () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
-      icon: Icon(icon),
-      label: Text(label),
       style: ElevatedButton.styleFrom(
-        minimumSize: Size(140, 50),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: color,
         foregroundColor: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      icon: Icon(icon),
+      label: Text(text),
+      onPressed: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
     );
   }
 }
