@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shop_app/views/screens/home/constant/product_model.dart';
-import 'package:shop_app/views/screens/home/splashScreen.dart';
+import 'package:shop_app/views/screens/home/constant/shop_item_model.dart'; // Your model with HiveType
+import 'package:shop_app/views/screens/home/splashScreen.dart'; // Your splash screen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,11 +9,11 @@ void main() async {
   // Initialize Hive
   await Hive.initFlutter();
 
-  // Register adapter
-  Hive.registerAdapter(ProductAdapter());
+  // Register the adapter
+  Hive.registerAdapter(ShopItemAdapter());
 
-  // Open box
-  await Hive.openBox<Product>('products');
+  // Open the box
+  await Hive.openBox<ShopItem>('products');
 
   runApp(MyApp());
 }
@@ -27,8 +27,9 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Shop App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: Splashscreen(),
     );
   }

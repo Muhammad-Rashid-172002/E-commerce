@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:shop_app/views/screens/home/constant/product_model.dart';
+import 'package:shop_app/views/screens/home/constant/shop_item_model.dart';
 
 class SellProductScreen extends StatefulWidget {
   @override
@@ -8,15 +8,25 @@ class SellProductScreen extends StatefulWidget {
 }
 
 class _SellProductScreenState extends State<SellProductScreen> {
-  Product? selectedProduct;
+  ShopItem? selectedItem;
   final quantityController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final products = Hive.box<Product>('products').values.toList();
+    // Make sure to use the correct box name 'shopItems'
+    final boxName = 'shopItems';
+
+    // You could add a check here if needed, but usually the box should be opened before navigating here
+    final items = Hive.isBoxOpen(boxName)
+        ? Hive.box<ShopItem>(boxName).values.toList()
+        : [];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Sell Product")),
+      appBar: AppBar(
+        title: Text("Sell Product"),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -24,7 +34,7 @@ class _SellProductScreenState extends State<SellProductScreen> {
             children: [
               SizedBox(height: 80),
               Card(
-                color: Colors.green.shade50, // subtle light green background
+                color: Colors.green.shade50,
                 elevation: 6,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -35,7 +45,7 @@ class _SellProductScreenState extends State<SellProductScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      DropdownButtonFormField<Product>(
+                      DropdownButtonFormField<String>(
                         decoration: InputDecoration(
                           labelText: 'Select Product',
                           labelStyle: TextStyle(color: Colors.green.shade900),
@@ -46,23 +56,30 @@ class _SellProductScreenState extends State<SellProductScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        items: products
+                        items: items
                             .map(
-                              (prod) => DropdownMenuItem(
-                                value: prod,
-                                child: Text(prod.name),
+                              (item) => DropdownMenuItem<String>(
+                                value: item.productName,
+                                child: Text(item.productName),
                               ),
                             )
                             .toList(),
-                        onChanged: (val) =>
-                            setState(() => selectedProduct = val),
+                        value: selectedItem?.productName,
+                        onChanged: (val) {
+                          setState(() {
+                            selectedItem = items.firstWhere(
+                              (item) => item.productName == val,
+                            );
+                          });
+                        },
                       ),
+
                       SizedBox(height: 15),
                       TextField(
                         controller: quantityController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Quantity',
+                          labelText: 'Quantity to Sell',
                           labelStyle: TextStyle(color: Colors.green.shade900),
                           filled: true,
                           fillColor: Colors.white,
@@ -76,12 +93,11 @@ class _SellProductScreenState extends State<SellProductScreen> {
                   ),
                 ),
               ),
-
               SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // Button color
-                  foregroundColor: Colors.white, // Text color
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -90,12 +106,16 @@ class _SellProductScreenState extends State<SellProductScreen> {
                 ),
                 onPressed: () {
                   final qty = int.tryParse(quantityController.text.trim()) ?? 0;
-                  if (selectedProduct != null &&
+
+                  if (selectedItem != null &&
                       qty > 0 &&
-                      selectedProduct!.quantity >= qty) {
-                    selectedProduct!.quantity -= qty;
-                    selectedProduct!.totalSold += qty;
-                    selectedProduct!.save();
+                      selectedItem!.quantity >= qty) {
+                    setState(() {
+                      selectedItem!.quantity -= qty;
+                      selectedItem!.totalSold += qty;
+                      selectedItem!.save();
+                    });
+
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text('Sale recorded')));
